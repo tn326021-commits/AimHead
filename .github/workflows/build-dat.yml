@@ -22,6 +22,10 @@ on:
         default: '5'
         type: string
 
+# Cấp quyền ghi cho GITHUB_TOKEN để có thể push code
+permissions:
+  contents: write
+
 jobs:
   build-dat:
     runs-on: ubuntu-latest
@@ -44,7 +48,25 @@ jobs:
           echo "=== Danh sách file đầu ra ==="
           ls -la output/
 
-      - name: Upload .dat artifact
+      - name: Commit và Push file .dat vào Repo
+        run: |
+          # Cấu hình danh tính Git (bắt buộc)
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Thêm toàn bộ file trong thư mục output vào git
+          git add output/
+          
+          # Kiểm tra xem có thay đổi nào không trước khi commit
+          if git diff --staged --quiet; then
+            echo "Không có thay đổi nào để commit."
+          else
+            git commit -m "Auto-build: Cập nhật file aimhead_patch.dat [Skip CI]"
+            git push
+            echo "Đã commit và push thành công!"
+          fi
+
+      - name: Upload .dat artifact (Dự phòng)
         uses: actions/upload-artifact@v4
         with:
           name: aimhead-dat
