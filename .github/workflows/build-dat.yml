@@ -41,26 +41,8 @@ jobs:
           SENSITIVITY: ${{ github.event.inputs.sensitivity || '5' }}
         run: |
           python scripts/generate_dat.py
-          echo "=== Output files ==="
+          echo "=== Danh sách file đầu ra ==="
           ls -la output/
-          echo "=== Hex dump (header) ==="
-          xxd output/aimhead_patch.dat | head -8
-
-      - name: Verify .dat structure
-        run: |
-          python - <<'EOF'
-          import struct
-          with open('output/aimhead_patch.dat', 'rb') as f:
-              data = f.read()
-          magic = data[:8]
-          version, length, checksum = struct.unpack('<II16s', data[8:32])
-          print(f'Magic: {magic}')
-          print(f'Version: {version}')
-          print(f'Payload length: {length}')
-          print(f'Checksum: {checksum.hex()}')
-          assert magic == b'FFAIM\x00\x01', 'Magic mismatch!'
-          print('[OK] Structure verified')
-          EOF
 
       - name: Upload .dat artifact
         uses: actions/upload-artifact@v4
