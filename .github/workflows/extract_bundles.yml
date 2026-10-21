@@ -1,0 +1,53 @@
+name: Auto Extract Asset Bundles
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'assets/**' # Chỉ chạy khi bạn upload file bundle mới vào thư mục assets
+  workflow_dispatch: # Cho phép bấm chạy thủ công
+
+permissions:
+  contents: write # Cấp quyền commit code
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cài đặt thư viện
+        run: |
+          python -m pip install --upgrade pip
+          pip install UnityPy Pillow
+
+      - name: Chạy Script Trích Xuất
+        run: |
+          python scripts/extract_assets.py
+
+      - name: Commit kết quả vào Repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/
+          
+          if git diff --staged --quiet; then
+            echo "Không có file mới nào được trích xuất."
+          else
+            git commit -m "Auto-Extract: Giải mã Asset Bundles [Skip CI]"
+            git push
+            echo "Đã lưu file giải mã vào thư mục output/"
+          fi
+
+      - name: Upload Artifact (Lưu trữ 30 ngày)
+        uses: actions/upload-artifact@v4
+        with:
+          name: extracted-assets
+          path: output/
+          retention-days: 30
