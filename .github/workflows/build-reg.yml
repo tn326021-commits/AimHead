@@ -1,0 +1,41 @@
+name: Build Real Data reg.dat
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-reg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate reg.dat
+        run: |
+          python scripts/generate_reg.py
+          echo "=== Dung lượng file ==="
+          ls -lh output/reg.dat
+          echo "=== Kiểm tra 16 bytes đầu ==="
+          xxd -l 16 output/reg.dat
+
+      - name: Commit & Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/
+          if git diff --staged --quiet; then
+            echo "Không có thay đổi."
+          else
+            git commit -m "Auto-Build: Cập nhật reg.dat (Real Data) [Skip CI]"
+            git push
+          fi
