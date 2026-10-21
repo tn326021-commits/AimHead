@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "file": "shaders.asset",
+    "status": "error: The BundleFile is encrypted, but no key was provided!\nYou can set the key via UnityPy.set_assetbundle_decrypt_key(key).\nTo try brute-forcing the key, use UnityPy.helpers.ArchiveStorageManager.brute_force_key(fp, key_sig, data_sig)\nwith  key_sig = b'\\x06\\n\\x00$r\\xd1\\n\\x00$\\x9b\\xdc\\n\\x00$}\\xb7', data_sig = b'\\x01\"\\xcd\\x14\\x00\\x15\\x8f\\x1e\\x00$\\x8a\\x83\\n\\x00$\\xd1',and fp being the path to global-metadata.dat or a memory dump.",
+    "extracted": 0,
+    "types": {}
+  }
+]
