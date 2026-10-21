@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "generated_at": "2026-10-21T12:41:53.121026Z",
+  "aim_mode": "head",
+  "head_scale": 3.0,
+  "sensitivity": 5,
+  "offsets": [
+    {
+      "name": "set_HeadBonesScale",
+      "offset": "0x86e3c24",
+      "value": "0x40400000",
+      "flags": "0xa"
+    },
+    {
+      "name": "get_HeadBonesScale",
+      "offset": "0x86e3c14",
+      "value": "0x40400000",
+      "flags": "0x5"
+    }
+  ],
+  "il_bytecode_size": 45,
+  "dat_size": 145
+}
