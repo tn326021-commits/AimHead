@@ -1,0 +1,72 @@
+name: Build AIMHEAD .dat Injector
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      aim_mode:
+        description: 'Chế độ aim'
+        required: true
+        default: 'head'
+        type: choice
+        options: [head, body, hybrid]
+      head_scale:
+        description: 'Hệ số phóng đại hitbox đầu (1.0 - 5.0)'
+        required: true
+        default: '3.0'
+        type: string
+      sensitivity:
+        description: 'Độ nhạy (1-10)'
+        required: true
+        default: '5'
+        type: string
+
+jobs:
+  build-dat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate .dat
+        env:
+          AIM_MODE: ${{ github.event.inputs.aim_mode || 'head' }}
+          HEAD_SCALE: ${{ github.event.inputs.head_scale || '3.0' }}
+          SENSITIVITY: ${{ github.event.inputs.sensitivity || '5' }}
+        run: |
+          python scripts/generate_dat.py
+          echo "=== Output files ==="
+          ls -la output/
+          echo "=== Hex dump (header) ==="
+          xxd output/aimhead_patch.dat | head -8
+
+      - name: Verify .dat structure
+        run: |
+          python - <<'EOF'
+          import struct
+          with open('output/aimhead_patch.dat', 'rb') as f:
+              data = f.read()
+          magic = data[:8]
+          version, length, checksum = struct.unpack('<II16s', data[8:32])
+          print(f'Magic: {magic}')
+          print(f'Version: {version}')
+          print(f'Payload length: {length}')
+          print(f'Checksum: {checksum.hex()}')
+          assert magic == b'FFAIM\x00\x01', 'Magic mismatch!'
+          print('[OK] Structure verified')
+          EOF
+
+      - name: Upload .dat artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aimhead-dat
+          path: |
+            output/aimhead_patch.dat
+            output/debug.json
+          retention-days: 30
