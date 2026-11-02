@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-"""Generate single aimlockhead.dat config file."""
 import struct, zlib, time, sys, os
 
 MAGIC = b"AIMC"
@@ -75,7 +73,11 @@ def write_dat(out_path):
     hdr += struct.pack("<Q", int(time.time()))
     hdr += b"\x00" * 8
 
-    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+    # Tự động tạo thư mục nếu chưa có (chống lỗi exit code 2)
+    directory = os.path.dirname(out_path)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+        
     with open(out_path, "wb") as f:
         f.write(hdr); f.write(payload)
     print(f"[+] {out_path} ({len(hdr)+len(payload)} bytes)")
