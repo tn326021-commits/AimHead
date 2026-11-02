@@ -18,7 +18,46 @@ jobs:
           python-version: '3.11'
 
       - name: Generate single dat
-        run: python3 tools/gen_dat_v3.py out/aimlockhead.dat
+        run: |
+          mkdir -p out
+          cat << 'EOF' > gen.py
+          import struct, zlib, time, os
+          MAGIC = b"AIMC"
+          VERSION = 3
+          T_FLOAT, T_INT, T_BOOL, T_DOUBLE = 0, 1, 2, 3
+          def pack_entry(ki, v):
+              if isinstance(v, bool): return struct.pack("<HB", ki, T_BOOL) + struct.pack("<B", 1 if v else 0) + b"\x00"*7
+              if isinstance(v, int): return struct.pack("<HBi", ki, T_INT, v) + b"\x00"*4
+              if isinstance(v, float): return struct.pack("<HBf", ki, T_FLOAT, v) + b"\x00"*4
+              return struct.pack("<HBd", ki, T_DOUBLE, float(v))
+          cfg = {
+              "aim_lock_head": True, "sensitivity_general": 100, "sensitivity_red_dot": 92,
+              "sensitivity_2x": 85, "sensitivity_4x": 75, "sensitivity_awm": 70,
+              "sensitivity_free_look": 100, "touch_offset_x": 0.0, "touch_offset_y": -2.0,
+              "fov": 100.0, "smoothing": 0.33, "max_distance": 200.0, "predict_time": 0.05,
+              "head_offset": 1.70, "recoil_control": 0.42, "trigger_delay_ms": 30,
+              "bone_id": 6, "fps_limit": 90, "graphics_quality": 2, "drag_enabled": True,
+              "drag_strength": 0.55, "drag_smoothing": 0.40, "drag_radius": 180.0,
+              "drag_deadzone": 12.0, "drag_vertical_bias": 0.75, "drag_max_speed": 22.0,
+              "drag_lock_head": True, "drag_fov": 110.0, "drag_hold_ms": 40
+          }
+          keys = list(cfg.keys())
+          kidx = {k: i for i, k in enumerate(keys)}
+          st = struct.pack("<H", len(keys))
+          for k in keys:
+              b = k.encode("utf-8")
+              st += struct.pack("<H", len(b)) + b
+          ent = struct.pack("<H", len(keys))
+          for k, v in cfg.items(): ent += pack_entry(kidx[k], v)
+          payload = st + ent
+          crc = zlib.crc32(payload) & 0xFFFFFFFF
+          hdr = MAGIC + struct.pack("<H", VERSION) + struct.pack("<B", 1) + struct.pack("<B", 0b00001111)
+          hdr += struct.pack("<I", crc) + struct.pack("<I", len(payload)) + struct.pack("<Q", int(time.time())) + b"\x00" * 8
+          with open("out/aimlockhead.dat", "wb") as f:
+              f.write(hdr); f.write(payload)
+          print("[+] Generated out/aimlockhead.dat")
+          EOF
+          python3 gen.py
 
       - name: Upload dat
         uses: actions/upload-artifact@v4
@@ -35,19 +74,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
-        id: ndk
         with:
           ndk-version: r25c
-
       - name: Download dat
         uses: actions/download-artifact@v4
         with:
           name: aimlockhead-dat
           path: out/
-
       - name: Configure CMake
         run: |
           cmake -B build-${{ matrix.abi }} \
@@ -55,16 +90,13 @@ jobs:
             -DANDROID_ABI=${{ matrix.abi }} \
             -DANDROID_PLATFORM=android-21 \
             -DCMAKE_BUILD_TYPE=Release
-
       - name: Build SO
         run: cmake --build build-${{ matrix.abi }} -j$(nproc)
-
       - name: Package
         run: |
           mkdir -p dist/${{ matrix.abi }}
           cp build-${{ matrix.abi }}/libaimlockhead.so dist/${{ matrix.abi }}/
           cp out/aimlockhead.dat dist/${{ matrix.abi }}/
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
