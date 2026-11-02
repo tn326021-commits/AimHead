@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.18)
+project(aimlockhead CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(aimlockhead SHARED src/main.cpp)
+target_link_libraries(aimlockhead PRIVATE log dl)
