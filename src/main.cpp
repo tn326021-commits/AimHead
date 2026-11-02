@@ -9,11 +9,9 @@ static DragEngine g_drag;
 __attribute__((constructor))
 static void on_load() {
     const char *paths[] = {
-        "/data/local/tmp/aimlockhead_aggressive.dat",
-        "/data/local/tmp/aimlockhead_balanced.dat",
-        "/data/local/tmp/aimlockhead_tournament.dat",
-        "/data/local/tmp/aimlockhead_precision.dat",
         "/data/local/tmp/aimlockhead.dat",
+        "/sdcard/Android/data/com.dts.freefireth/files/aimlockhead.dat",
+        "/data/local/tmp/configs/aimlockhead.dat",
         nullptr
     };
     for(int i=0; paths[i]; i++){
@@ -25,5 +23,5 @@ static void on_load() {
             return;
         }
     }
-    LOGI("No .dat found");
+    LOGI("aimlockhead.dat not found");
 }
