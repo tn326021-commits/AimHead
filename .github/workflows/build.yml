@@ -2,21 +2,32 @@ name: Build AimLock AssetBundle
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build AssetBundle for Unity 2018.4.12f1
-    runs-on: ubuntu-latest
+  build-windows:
+    name: Build AssetBundle for Windows
+    runs-on: windows-latest
+    
     steps:
+      # 1. Checkout mã nguồn dự án
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Build AssetBundle
+      # 2. Thiết lập Unity Editor phiên bản 2018.4.12f1
+      - name: Setup Unity Project
         uses: game-ci/unity-builder@v2
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           unityVersion: 2018.4.12f1
           targetPlatform: StandaloneWindows64
-          customParameters: -executeMethod AimLockBuilder.BuildAndEncryptAssetBundle
+          customParameters: -executeMethod AimLockBuilder.BuildAssetBundle -quit -batchmode -nographics
+
+      # 3. Lưu trữ file AssetBundle đã build và mã hóa sau khi workflow chạy xong
+      - name: Upload AssetBundle Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Aimlock-AssetBundle
+          path: Assets/AssetBundles/Aimlock.asset
