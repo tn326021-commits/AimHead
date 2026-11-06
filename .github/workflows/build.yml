@@ -1,4 +1,4 @@
-name: Build AimLock AssetBundle
+name: Python Encrypt Asset Workflow
 
 on:
   push:
@@ -6,28 +6,33 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    name: Build AssetBundle for Windows
-    runs-on: windows-latest
-    
+  encrypt-asset:
+    runs-on: ubuntu-latest
+
     steps:
-      # 1. Checkout mã nguồn dự án
+      # 1. Tải mã nguồn kho lưu trữ về máy chủ ảo của GitHub
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2. Thiết lập Unity Editor phiên bản 2018.4.12f1
-      - name: Setup Unity Project
-        uses: game-ci/unity-builder@v2
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      # 2. Cài đặt môi trường Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          unityVersion: 2018.4.12f1
-          targetPlatform: StandaloneWindows64
-          customParameters: -executeMethod AimLockBuilder.BuildAssetBundle -quit -batchmode -nographics
+          python-version: '3.x'
 
-      # 3. Lưu trữ file AssetBundle đã build và mã hóa sau khi workflow chạy xong
-      - name: Upload AssetBundle Artifacts
+      # 3. Cài đặt thư viện mã hóa pycryptodome
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pycryptodome
+
+      # 4. Chạy script Python để mã hóa file asset
+      - name: Run Encryption Script
+        run: python encrypt_asset.py
+
+      # 5. Lưu file Aimlock.asset đã mã hóa thành Artifact trên GitHub
+      - name: Upload Encrypted Asset Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Aimlock-AssetBundle
+          name: Encrypted-Aimlock-Asset
           path: Assets/AssetBundles/Aimlock.asset
