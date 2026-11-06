@@ -1,10 +1,10 @@
-name: Build Unity AssetBundle (2018.4.11f1)
+name: Build Unity AssetBundle (2018.4.12f1)
 
 on:
   workflow_dispatch: # Chỉ chạy khi bạn bấm nút, không tự động chạy khi push code C++
 
 env:
-  UNITY_VERSION: '2018.4.11f1'
+  UNITY_VERSION: '2018.4.12f1'
   BUILD_TARGET: 'StandaloneWindows64'
 
 jobs:
