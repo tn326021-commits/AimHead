@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout source
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Setup Android NDK r25c (supports ARM64 / clang)
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
         with:
@@ -22,33 +20,37 @@ jobs:
           add-to-path: true
         id: setup-ndk
 
-      # 3. Download & build Dobby from source (ARM64)
       - name: Build Dobby ARM64
         run: |
           git clone --depth=1 https://github.com/jmpews/Dobby.git dobby_src
           cd dobby_src
+
+          # Fix: xóa file .asm ARM64 dùng ADRP relocation không tương thích NDK cross-assembler
+          find . -name "closure_bridge_arm64*.asm" -delete
+          find . -name "CMakeLists.txt" -exec \
+            sed -i 's/closure_bridge_arm64\.asm//g' {} \; 2>/dev/null || true
+
           mkdir build_arm64 && cd build_arm64
           cmake .. \
             -DCMAKE_TOOLCHAIN_FILE=${{ steps.setup-ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-21 \
             -DANDROID_STL=c++_static \
+            -DCMAKE_BUILD_TYPE=Release \
             -DPlugin.RegisterSymbol=OFF \
-            -DCMAKE_BUILD_TYPE=Release
-          make -j$(nproc)
-          # Copy outputs to project deps
-          mkdir -p ../../deps/dobby/include ../../deps/dobby
-          cp libdobby.a ../../deps/dobby/libdobby_arm64-v8a.a
-          cp -r ../include/* ../../deps/dobby/include/ 2>/dev/null || true
-          cp ../builtin-plugin/AndroidRestriction/dobby.h ../../deps/dobby/include/ 2>/dev/null || true
-          # Ensure dobby.h is present
-          find . -name "dobby.h" -exec cp {} ../../deps/dobby/include/ \; 2>/dev/null || true
+            -DPlugin.SymbolResolver=OFF \
+            -DDOBBY_DEBUG=OFF \
+            -DFINE_LOG=OFF \
+            -DCMAKE_ASM_FLAGS="--target=aarch64-linux-android21"
+          make dobby_static -j$(nproc)
 
-      # 4. Build the patch .so with NDK ndk-build
+          mkdir -p ../../deps/dobby/include
+          DOBBY_LIB=$(find . -name "libdobby*.a" | head -1)
+          cp "$DOBBY_LIB" ../../deps/dobby/libdobby_arm64-v8a.a
+          find .. -name "dobby.h" -exec cp {} ../../deps/dobby/include/ \; 2>/dev/null || true
+
       - name: Build libaimmod.so
         run: |
-          export NDK_PROJECT_PATH=$(pwd)
-          export APP_BUILD_SCRIPT=$(pwd)/jni/Android.mk
           ${{ steps.setup-ndk.outputs.ndk-path }}/ndk-build \
             NDK_PROJECT_PATH=$(pwd) \
             APP_BUILD_SCRIPT=$(pwd)/jni/Android.mk \
@@ -57,15 +59,11 @@ jobs:
             NDK_OUT=$(pwd)/out/obj \
             -j$(nproc) V=1
 
-      # 5. Verify output
       - name: Verify output
         run: |
           ls -lh out/libs/arm64-v8a/
           file out/libs/arm64-v8a/libaimmod.so
-          # Print symbol count (should not expose hook names)
-          nm -D out/libs/arm64-v8a/libaimmod.so | grep -v "JNI_OnLoad" | wc -l
 
-      # 6. Upload artifact
       - name: Upload libaimmod.so
         uses: actions/upload-artifact@v4
         with:
