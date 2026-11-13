@@ -24,10 +24,12 @@ jobs:
         run: |
           git clone https://github.com/jmpews/Dobby.git dobby_src
           cd dobby_src
-          git checkout 6682705973b1847e30d1d2b86bb320b9e84b8d23
+          git fetch origin 233f4af4591de03bd75b06f602843c445f2d9e88
+          git checkout 233f4af4591de03bd75b06f602843c445f2d9e88
 
-          find . -name "*closure_bridge_arm64*" -delete
-          find . -name "CMakeLists.txt" -exec sed -i '/closure_bridge_arm64/d' {} + 2>/dev/null || true
+          find . -name "closure_bridge_arm64*.asm" -delete
+          find . -name "CMakeLists.txt" -exec \
+            sed -i 's/closure_bridge_arm64\.asm//g' {} \; 2>/dev/null || true
 
           mkdir build_arm64 && cd build_arm64
           cmake .. \
