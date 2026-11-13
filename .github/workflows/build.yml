@@ -22,11 +22,10 @@ jobs:
 
       - name: Build Dobby ARM64
         run: |
-          # Clone bản mới nhất của Dobby
-          git clone --depth=1 https://github.com/jmpews/Dobby.git dobby_src
+          git clone https://github.com/jmpews/Dobby.git dobby_src
           cd dobby_src
+          git checkout 6682705973b1847e30d1d2b86bb320b9e84b8d23
 
-          # Xóa các file closure_bridge_arm64 gây lỗi ADRP relocation trên NDK mới
           find . -name "*closure_bridge_arm64*" -delete
           find . -name "CMakeLists.txt" -exec sed -i '/closure_bridge_arm64/d' {} + 2>/dev/null || true
 
