@@ -1,2 +1,0 @@
-m_EditorVersion: 2018.4.12f1
-m_EditorVersionWithBuild: 2018.4.12f1
