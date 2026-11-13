@@ -22,15 +22,9 @@ jobs:
 
       - name: Build Dobby ARM64
         run: |
-          # Dùng commit stable đã xác nhận build được trên Android NDK
-          git clone https://github.com/jmpews/Dobby.git dobby_src
+          # Clone bản mới nhất của Dobby để tương thích tốt với NDK hiện tại
+          git clone --depth=1 https://github.com/jmpews/Dobby.git dobby_src
           cd dobby_src
-          git submodule update --init --recursive
-
-          # Xóa file .asm ARM64 lỗi ADRP (fix từ lần trước)
-          find . -name "closure_bridge_arm64*.asm" -delete
-          find . -name "CMakeLists.txt" -exec \
-            sed -i 's/closure_bridge_arm64\.asm//g' {} \; 2>/dev/null || true
 
           mkdir build_arm64 && cd build_arm64
           cmake .. \
@@ -39,17 +33,14 @@ jobs:
             -DANDROID_PLATFORM=android-21 \
             -DANDROID_STL=c++_static \
             -DCMAKE_BUILD_TYPE=Release \
-            -DPlugin.RegisterSymbol=OFF \
-            -DPlugin.SymbolResolver=OFF \
-            -DDOBBY_DEBUG=OFF \
-            -DFINE_LOG=OFF \
-            -DCMAKE_ASM_FLAGS="--target=aarch64-linux-android21"
+            -DDOBBY_DEBUG=OFF
           make dobby_static -j$(nproc)
 
           mkdir -p ../../deps/dobby/include
           DOBBY_LIB=$(find . -name "libdobby*.a" | head -1)
           cp "$DOBBY_LIB" ../../deps/dobby/libdobby_arm64-v8a.a
           find .. -name "dobby.h" -exec cp {} ../../deps/dobby/include/ \; 2>/dev/null || true
+
       - name: Build libaimmod.so
         run: |
           ${{ steps.setup-ndk.outputs.ndk-path }}/ndk-build \
